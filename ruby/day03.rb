@@ -17,7 +17,7 @@ def get_parts(lines)
       number = substring[substring_index..].scan(number_regex).first
       col += substring_index
       symbols = get_adjacent_symbols(row, col, number.length, lines)
-      parts.push({number: number.to_i, symbols:})
+      parts.push({ number: number.to_i, symbols: })
       col += number.length
     end
   end
@@ -32,7 +32,7 @@ def get_adjacent_symbols(row, col, length, lines)
     col_range.each do |c|
       char = lines[r][c]
       is_symbol = char.match? /[^0-9.]/
-      symbols.push({char:, col: c, row: r}) if is_symbol
+      symbols.push({ char:, col: c, row: r }) if is_symbol
     end
   end
   symbols
@@ -48,9 +48,9 @@ def run_part_2(file_name)
     part[:symbols].map { |symbol| symbols[symbol] += [part[:number]] }
   end
 
-  gears = symbols.filter {|symbol, numbers| symbol[:char] == "*" && numbers.count > 1}
+  gears = symbols.filter { |symbol, numbers| symbol[:char] == "*" && numbers.count > 1 }
 
-  gears.sum do |_,numbers|
+  gears.sum do |_, numbers|
     numbers.reduce(1) { |a, b| a * b }
   end
 end

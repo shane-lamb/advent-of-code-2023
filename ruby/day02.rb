@@ -32,7 +32,7 @@ def run_part_2(file_name)
     turns.each do |turn|
       turn.each_key { |key| largest_counts[key] = [turn[key], largest_counts[key]].max }
     end
-    largest_counts.values.reduce(1) { |agg, count| agg * count}
+    largest_counts.values.reduce(1) { |agg, count| agg * count }
   end
   fewest_cubes_multiplied.sum
 end
