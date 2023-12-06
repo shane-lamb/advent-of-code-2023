@@ -1,6 +1,21 @@
 def run_part_1(file_name)
   lines = get_lines(file_name)
-  lines.count
+  races = parse_races(lines)
+  race_win_condition_counts = races.map do |race|
+    distance_to_beat = race[:distance_to_beat]
+    race_time = race[:race_time]
+    (1...race_time).count { |charge_time| get_distance_travelled(race_time, charge_time) > distance_to_beat }
+  end
+  race_win_condition_counts.reduce(1) { |possibilities, win_count| possibilities * win_count }
+end
+
+def parse_races(lines)
+  rows_of_numbers = lines.map { |line| line.split(" ")[1..].map(&:to_i) }
+  rows_of_numbers[0].zip(rows_of_numbers[1]).map { |time, distance| { race_time: time, distance_to_beat: distance } }
+end
+
+def get_distance_travelled(race_time, charge_time)
+  (race_time - charge_time) * charge_time
 end
 
 def run_part_2(file_name)
@@ -14,10 +29,10 @@ def get_lines(file_name)
   file.each_line.map(&:strip)
 end
 
-day_num = "99"
+day_num = "06"
 
 part_1_test_result = run_part_1("day#{day_num}_test.txt")
-part_1_expected_test_result = 1234
+part_1_expected_test_result = 288
 if part_1_test_result != part_1_expected_test_result
   puts "test failed! expected #{part_1_expected_test_result}, got #{part_1_test_result}"
 end
