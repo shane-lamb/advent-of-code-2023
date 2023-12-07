@@ -20,7 +20,11 @@ end
 
 def run_part_2(file_name)
   lines = get_lines(file_name)
-  lines.count
+  race_time, distance_to_beat = lines.map { |line| line.split(" ")[1..].join.to_i }
+  # Brute forcing it as it only takes a few seconds to compute, but could be a lot more efficient.
+  # Could calculate the min and max charge times needed to win, and then the number of possible win scenarios
+  # would simply be the difference (max - min).
+  (1...race_time).count { |charge_time| get_distance_travelled(race_time, charge_time) > distance_to_beat }
 end
 
 def get_lines(file_name)
@@ -40,11 +44,11 @@ end
 part_1_result = run_part_1("day#{day_num}_input.txt")
 puts "part 1 result: #{part_1_result}"
 
-# part_2_test_result = run_part_2("day#{day_num}_test.txt")
-# part_2_expected_test_result = 5678
-# if part_2_test_result != part_2_expected_test_result
-#   puts "test failed! expected #{part_2_expected_test_result}, got #{part_2_test_result}"
-# end
-#
-# part_2_result = run_part_2("day#{day_num}_input.txt")
-# puts "part 2 result: #{part_2_result}"
+part_2_test_result = run_part_2("day#{day_num}_test.txt")
+part_2_expected_test_result = 71503
+if part_2_test_result != part_2_expected_test_result
+  puts "test failed! expected #{part_2_expected_test_result}, got #{part_2_test_result}"
+end
+
+part_2_result = run_part_2("day#{day_num}_input.txt")
+puts "part 2 result: #{part_2_result}"
