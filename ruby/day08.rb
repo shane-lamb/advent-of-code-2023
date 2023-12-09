@@ -60,35 +60,18 @@ end
 
 def run_part_2(file_name)
   steps_lines, node_lines = get_grouped_lines(file_name)
-  nodes = node_lines.map { |line| Node.new(line) }.to_h { |node| [node.name, node] }
   steps = steps_lines.first
+  nodes = node_lines.map { |line| Node.new(line) }.to_h { |node| [node.name, node] }
   nodes.values.each { |node| node.post_initialise(steps, nodes) }
 
   a_nodes = nodes.filter { |name| name.chars.last == "A" }.values
+  to_z_nodes = a_nodes.map { |node| node.to_z_nodes.first }
+  get_least_common_multiple(to_z_nodes)
+end
 
-  step_count = 0
-
-  while true
-    nearest_zs = a_nodes.map do |a_node|
-      cursor_index = step_count % a_node.loop_length
-      z_distances = a_node.to_z_nodes
-                          .map { |to_z_node| to_z_node - cursor_index }
-      z_distances_normalised = z_distances.map { |dist| (dist + a_node.loop_length) % a_node.loop_length }
-      z_distances_normalised.min
-    end
-
-    max_nearest_z = nearest_zs.max
-    break if max_nearest_z == 0
-
-    step_count += max_nearest_z
-  end
-  step_count
-
-  # how to use caching to fix performance? or is a smarter algorithm needed?
-  # what could we cache?
-  # the steps repeat. therefore, we should end up with a number of cyclical paths, dependent on the starting position.
-  # because the path is cyclical, from any given starting point within the path we should be able to cache the distance
-  # to each reachable Z node (or the closest reachable) and cache that. along with its name
+def get_least_common_multiple(numbers)
+  # todo: how to write this "lcm" method myself
+  numbers.reduce(1) { |acc, num| acc.lcm(num) }
 end
 
 def get_grouped_lines(file_name, group_separator = "\n\n")
