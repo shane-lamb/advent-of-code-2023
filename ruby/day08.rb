@@ -13,14 +13,48 @@ def run_part_1(file_name)
 end
 
 class Node
-  attr_reader :name, :left_name, :right_name
+  attr_reader :name, :to_z_nodes, :loop_length
+
+  def initialize(line)
+    @name, @left_name, @right_name = line.scan(/\w+/)
+  end
 
   def follow_step(step, nodes)
     { "L" => nodes[@left_name], "R" => nodes[@right_name] }[step]
   end
 
-  def initialize(line)
-    @name, @left_name, @right_name = line.scan(/\w+/)
+  def post_initialise(steps, nodes)
+    return if @name.chars.last != 'A'
+
+    z_nodes = {}
+    cursor_node = self
+    step_index = 0
+    steps_loop_count = 0
+
+    while true
+      step = steps[step_index]
+      next_node = cursor_node.follow_step(step, nodes)
+
+      if next_node.name.chars.last == 'Z'
+        key = next_node.name + step_index.to_s
+        travelled = steps_loop_count * steps.length + step_index + 1
+        if z_nodes[key]
+          @loop_length = travelled
+          @to_z_nodes = z_nodes.values
+          puts "loop length: #{@loop_length}"
+          puts "z_nodes: #{@to_z_nodes}"
+          break
+        end
+        z_nodes[key] = travelled
+      end
+
+      cursor_node = next_node
+      step_index += 1
+      if step_index == steps.length
+        steps_loop_count += 1
+        step_index = 0
+      end
+    end
   end
 end
 
@@ -28,14 +62,33 @@ def run_part_2(file_name)
   steps_lines, node_lines = get_grouped_lines(file_name)
   nodes = node_lines.map { |line| Node.new(line) }.to_h { |node| [node.name, node] }
   steps = steps_lines.first
-  cursor_nodes = nodes.filter { |name| name[2] == "A" }.values
+  nodes.values.each { |node| node.post_initialise(steps, nodes) }
+
+  a_nodes = nodes.filter { |name| name.chars.last == "A" }.values
+
   step_count = 0
-  while cursor_nodes.any? {|node| node.name[2] != "Z"}
-    step = steps[step_count % steps.length]
-    cursor_nodes = cursor_nodes.map { |node| node.follow_step(step, nodes) }
-    step_count += 1
+
+  while true
+    nearest_zs = a_nodes.map do |a_node|
+      cursor_index = step_count % a_node.loop_length
+      z_distances = a_node.to_z_nodes
+                          .map { |to_z_node| to_z_node - cursor_index }
+      z_distances_normalised = z_distances.map { |dist| (dist + a_node.loop_length) % a_node.loop_length }
+      z_distances_normalised.min
+    end
+
+    max_nearest_z = nearest_zs.max
+    break if max_nearest_z == 0
+
+    step_count += max_nearest_z
   end
   step_count
+
+  # how to use caching to fix performance? or is a smarter algorithm needed?
+  # what could we cache?
+  # the steps repeat. therefore, we should end up with a number of cyclical paths, dependent on the starting position.
+  # because the path is cyclical, from any given starting point within the path we should be able to cache the distance
+  # to each reachable Z node (or the closest reachable) and cache that. along with its name
 end
 
 def get_grouped_lines(file_name, group_separator = "\n\n")
