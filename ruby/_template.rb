@@ -6,7 +6,7 @@ def run_part_2(file_name)
 end
 
 def get_grouped_lines(file_name, group_separator = "\n\n")
-  get_lines(file_name).join.split(group_separator).map { |group_lines| group_lines.split("\n") }
+  get_lines(file_name).join("\n").split(group_separator).map { |group_lines| group_lines.split("\n") }
 end
 
 def get_lines(file_name)
