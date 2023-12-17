@@ -22,10 +22,10 @@ part_1_expected_test_result = 1234
 if part_1_test_result != part_1_expected_test_result
   puts "test failed! expected #{part_1_expected_test_result}, got #{part_1_test_result}"
 end
-
-part_1_result = run_part_1("day#{day_num}_input.txt")
-puts "part 1 result: #{part_1_result}"
-
+#
+# part_1_result = run_part_1("day#{day_num}_input.txt")
+# puts "part 1 result: #{part_1_result}"
+#
 # part_2_test_result = run_part_2("day#{day_num}_test.txt")
 # part_2_expected_test_result = 5678
 # if part_2_test_result != part_2_expected_test_result
