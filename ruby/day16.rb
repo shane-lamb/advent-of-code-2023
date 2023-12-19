@@ -84,8 +84,13 @@ class Tile
     @previously_given_reflections = {}
   end
 
+  def reset
+    @energised = false
+    @previously_given_reflections = {}
+  end
+
   def get_reflections(direction)
-    return [] if @previously_given_reflections[direction]
+    return [] if @previously_given_reflections.has_key?(direction)
     @previously_given_reflections[direction] = true
     @reflections[direction]
   end
@@ -121,6 +126,14 @@ class Map
     end
   end
 
+  def reset
+    each { |tile| tile.reset }
+  end
+
+  def count_energised
+    filter { |tile| tile.energised }.count
+  end
+
   def out_of_bounds?(pos)
     pos.x < 0 || pos.x >= @width || pos.y < 0 || pos.y >= @height
   end
@@ -148,26 +161,38 @@ end
 def run_part_1(file_name)
   lines = get_lines(file_name)
   map = Map.from_lines(lines)
-  run_beam(map)
-  energised_count = map.filter { |tile| tile.energised }.count
-  energised_count
+  run_beam(map, [Pos.new(0, 0), $right])
+  map.count_energised
 end
 
-def run_beam(map)
-  beams = [[Pos.new(0, 0), $right]]
+def run_beam(map, initial_beam)
+  beams = [initial_beam]
   while beams.any?
     beams = beams.flat_map do |beam|
       pos, dir = beam
       next [] if map.out_of_bounds?(pos)
       tile = map.get(pos)
       tile.energised = true
-      reflections = tile.get_reflections(dir).map { |new_dir| [pos + new_dir, new_dir] }
-      reflections
+      tile.get_reflections(dir).map { |new_dir| [pos + new_dir, new_dir] }
     end
   end
 end
 
 def run_part_2(file_name)
+  lines = get_lines(file_name)
+  map = Map.from_lines(lines)
+  from_top = (0...map.width).map { |x| [Pos.new(x, 0), $down] }
+  from_bottom = (0...map.width).map { |x| [Pos.new(x, map.height - 1), $up] }
+  from_left = (0...map.height).map { |y| [Pos.new(0, y), $right] }
+  from_right = (0...map.height).map { |y| [Pos.new(map.width - 1, y), $left] }
+  starting_beams = from_top + from_bottom + from_left + from_right
+  energised_counts = starting_beams.map do |beam|
+    run_beam(map, beam)
+    energised_count = map.count_energised
+    map.reset
+    energised_count
+  end
+  energised_counts.max
 end
 
 def get_grouped_lines(file_name, group_separator = "\n\n")
@@ -191,11 +216,11 @@ end
 part_1_result = run_part_1("day#{day_num}_input.txt")
 puts "part 1 result: #{part_1_result}"
 
-# part_2_test_result = run_part_2("day#{day_num}_test.txt")
-# part_2_expected_test_result = 5678
-# if part_2_test_result != part_2_expected_test_result
-#   puts "test failed! expected #{part_2_expected_test_result}, got #{part_2_test_result}"
-# end
-#
-# part_2_result = run_part_2("day#{day_num}_input.txt")
-# puts "part 2 result: #{part_2_result}"
+part_2_test_result = run_part_2("day#{day_num}_test.txt")
+part_2_expected_test_result = 51
+if part_2_test_result != part_2_expected_test_result
+  puts "test failed! expected #{part_2_expected_test_result}, got #{part_2_test_result}"
+end
+
+part_2_result = run_part_2("day#{day_num}_input.txt")
+puts "part 2 result: #{part_2_result}"
