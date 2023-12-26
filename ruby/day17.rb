@@ -55,11 +55,12 @@ class Tile
   end
 
   def post_initialize()
-    @connections = $all_directions.map do |dir|
+    @connections = {}
+    $all_directions.each do |dir|
       new_pos = @pos + dir
-      next nil if @map.out_of_bounds?(new_pos)
-      [dir, @map.get(new_pos)]
-    end.compact
+      next if @map.out_of_bounds?(new_pos)
+      @connections[dir] = @map.get(new_pos)
+    end
   end
 
   def get_best_path_loss(dir, move_count)
@@ -68,9 +69,9 @@ class Tile
     @worst_path_loss
   end
 
-  def register_path_loss(loss, path)
+  def register_path_loss(loss, path, max_moves)
     @visit_count += 1
-    (path.move_count..3).each do |move_count|
+    (path.move_count..max_moves).each do |move_count|
       @best_path_loss[[path.dir, move_count]] = loss
     end
     return unless @is_destination
@@ -144,32 +145,49 @@ class Map
   end
 end
 
+class Config
+  attr_reader :min_moves, :max_moves
+
+  def initialize(min_moves, max_moves)
+    @min_moves = min_moves
+    @max_moves = max_moves
+  end
+end
+
 class Path
   attr_reader :total_loss, :dir, :move_count, :tile, :tiles
 
-  def initialize(map, prev_tiles, tile, dir = $down, total_loss = 0, move_count = 0)
+  def initialize(config, map, prev_tiles, tile, dir = $down, total_loss = 0, move_count = 0)
     @map = map
     @tile = tile
     @tiles = prev_tiles + [tile]
     @dir = dir
     @total_loss = total_loss
     @move_count = move_count
-    @tile.register_path_loss(@total_loss, self)
+    @tile.register_path_loss(@total_loss, self, config.max_moves)
+    @config = config
   end
 
   def traverse
     return [] if @tile.is_destination
 
     map_best = @map.best_path_loss - @tile.distance_left + 1
-    @tile.connections.map do |x|
-      dir, tile = x
+    @tile.connections.map do |dir, tile|
       next nil if (dir + @dir) == $none # no backtracking
-      next nil if @dir == dir && @move_count > 2 # no more than 3 consecutive moves in the same direction
-      new_loss = @total_loss + tile.loss
-      next nil unless new_loss < tile.get_best_path_loss(dir, @move_count)
-      next nil unless new_loss < map_best
-      move_count = @dir == dir ? @move_count + 1 : 1
-      Path.new(@map, @tiles, tile, dir, new_loss, move_count)
+      same_dir = @dir == dir
+      next nil if same_dir && @move_count == @config.max_moves
+      total_loss = @total_loss + tile.loss
+      unless same_dir
+        (2..@config.min_moves).each do
+          tile = tile.connections[dir]
+          total_loss += tile.loss
+          return nil if tile.nil?
+        end
+      end
+      next nil unless total_loss < tile.get_best_path_loss(dir, @move_count)
+      next nil unless total_loss < map_best
+      move_count = same_dir ? @move_count + 1 : @config.min_moves
+      Path.new(@config, @map, @tiles, tile, dir, total_loss, move_count)
     end.compact
   end
 end
@@ -178,7 +196,8 @@ def run_part_1(file_name)
   lines = get_lines(file_name)
   map = Map.from_lines(lines)
   start = map.get(Pos.new(0, 0))
-  paths = [Path.new(map, [], start)]
+  config = Config.new(1, 3)
+  paths = [Path.new(config, map, [], start)]
   while paths.any?
     first = paths.shift
     first_paths = first.traverse
@@ -210,8 +229,8 @@ if part_1_test_result != part_1_expected_test_result
   puts "test failed! expected #{part_1_expected_test_result}, got #{part_1_test_result}"
 end
 
-part_1_result = run_part_1("day#{day_num}_input.txt")
-puts "part 1 result: #{part_1_result}"
+# part_1_result = run_part_1("day#{day_num}_input.txt")
+# puts "part 1 result: #{part_1_result}"
 #
 # part_2_test_result = run_part_2("day#{day_num}_test.txt")
 # part_2_expected_test_result = 5678
