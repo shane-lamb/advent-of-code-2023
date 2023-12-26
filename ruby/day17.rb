@@ -178,11 +178,16 @@ class Path
       next nil if same_dir && @move_count == @config.max_moves
       total_loss = @total_loss + tile.loss
       unless same_dir
+        broke = false
         (2..@config.min_moves).each do
           tile = tile.connections[dir]
+          if tile.nil?
+            broke = true
+            break
+          end
           total_loss += tile.loss
-          return nil if tile.nil?
         end
+        next nil if broke
       end
       next nil unless total_loss < tile.get_best_path_loss(dir, @move_count)
       next nil unless total_loss < map_best
@@ -195,8 +200,12 @@ end
 def run_part_1(file_name)
   lines = get_lines(file_name)
   map = Map.from_lines(lines)
-  start = map.get(Pos.new(0, 0))
   config = Config.new(1, 3)
+  get_best_path_loss(map, config)
+end
+
+def get_best_path_loss(map, config)
+  start = map.get(Pos.new(0, 0))
   paths = [Path.new(config, map, [], start)]
   while paths.any?
     first = paths.shift
@@ -209,6 +218,10 @@ def run_part_1(file_name)
 end
 
 def run_part_2(file_name)
+  lines = get_lines(file_name)
+  map = Map.from_lines(lines)
+  config = Config.new(4, 10)
+  get_best_path_loss(map, config)
 end
 
 def get_grouped_lines(file_name, group_separator = "\n\n")
@@ -229,14 +242,14 @@ if part_1_test_result != part_1_expected_test_result
   puts "test failed! expected #{part_1_expected_test_result}, got #{part_1_test_result}"
 end
 
-# part_1_result = run_part_1("day#{day_num}_input.txt")
-# puts "part 1 result: #{part_1_result}"
-#
-# part_2_test_result = run_part_2("day#{day_num}_test.txt")
-# part_2_expected_test_result = 5678
-# if part_2_test_result != part_2_expected_test_result
-#   puts "test failed! expected #{part_2_expected_test_result}, got #{part_2_test_result}"
-# end
-#
-# part_2_result = run_part_2("day#{day_num}_input.txt")
-# puts "part 2 result: #{part_2_result}"
+part_1_result = run_part_1("day#{day_num}_input.txt")
+puts "part 1 result: #{part_1_result}"
+
+part_2_test_result = run_part_2("day#{day_num}_test.txt")
+part_2_expected_test_result = 94
+if part_2_test_result != part_2_expected_test_result
+  puts "test failed! expected #{part_2_expected_test_result}, got #{part_2_test_result}"
+end
+
+part_2_result = run_part_2("day#{day_num}_input.txt")
+puts "part 2 result: #{part_2_result}"
